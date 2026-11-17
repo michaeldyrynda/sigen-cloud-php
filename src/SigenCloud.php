@@ -11,9 +11,15 @@ use Dyrynda\SigenCloud\Exceptions\SigenCloudException;
 use Dyrynda\SigenCloud\Exceptions\SigenCloudRateLimitException;
 use Dyrynda\SigenCloud\Requests\AccessTokenRequest;
 use Dyrynda\SigenCloud\Requests\RefreshAccessTokenRequest;
+use Dyrynda\SigenCloud\Resources\AioResource;
 use Dyrynda\SigenCloud\Resources\BatteryResource;
+use Dyrynda\SigenCloud\Resources\DcChargerResource;
+use Dyrynda\SigenCloud\Resources\GridResource;
+use Dyrynda\SigenCloud\Resources\OperatingModeResource;
 use Dyrynda\SigenCloud\Resources\SolarResource;
 use Dyrynda\SigenCloud\Resources\StationResource;
+use Dyrynda\SigenCloud\Resources\TariffResource;
+use Dyrynda\SigenCloud\Resources\V2xResource;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Http\Response;
@@ -59,9 +65,19 @@ final class SigenCloud extends Connector
         );
     }
 
+    public function aio(): AioResource
+    {
+        return new AioResource($this);
+    }
+
     public function battery(): BatteryResource
     {
         return new BatteryResource($this);
+    }
+
+    public function dcCharger(): DcChargerResource
+    {
+        return new DcChargerResource($this);
     }
 
     public function getRequestException(Response $response, ?Throwable $senderException): SigenCloudException
@@ -82,12 +98,22 @@ final class SigenCloud extends Connector
         return new SigenCloudException($response, $message, previous: $senderException);
     }
 
+    public function grid(): GridResource
+    {
+        return new GridResource($this);
+    }
+
     /**
      * Sigen reports most failures with a successful HTTP status and a non-zero code.
      */
     public function hasRequestFailed(Response $response): ?bool
     {
         return in_array($this->envelope($response)['code'] ?? null, [0, '0', null], true) ? null : true;
+    }
+
+    public function operatingModes(): OperatingModeResource
+    {
+        return new OperatingModeResource($this);
     }
 
     public function resolveBaseUrl(): string
@@ -103,6 +129,16 @@ final class SigenCloud extends Connector
     public function stations(): StationResource
     {
         return new StationResource($this);
+    }
+
+    public function tariffs(): TariffResource
+    {
+        return new TariffResource($this);
+    }
+
+    public function v2x(): V2xResource
+    {
+        return new V2xResource($this);
     }
 
     protected function defaultAuth(): TokenAuthenticator
