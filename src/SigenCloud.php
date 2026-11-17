@@ -6,7 +6,9 @@ namespace Dyrynda\SigenCloud;
 
 use Dyrynda\SigenCloud\Data\AccessToken;
 use Dyrynda\SigenCloud\Enums\Region;
+use Dyrynda\SigenCloud\Exceptions\SigenCloudAuthenticationException;
 use Dyrynda\SigenCloud\Exceptions\SigenCloudException;
+use Dyrynda\SigenCloud\Exceptions\SigenCloudRateLimitException;
 use Dyrynda\SigenCloud\Requests\AccessTokenRequest;
 use Dyrynda\SigenCloud\Requests\RefreshAccessTokenRequest;
 use Dyrynda\SigenCloud\Resources\BatteryResource;
@@ -64,9 +66,20 @@ final class SigenCloud extends Connector
 
     public function getRequestException(Response $response, ?Throwable $senderException): SigenCloudException
     {
-        $message = $this->envelope($response)['msg'] ?? null;
+        $envelope = $this->envelope($response);
+        $code = $envelope['code'] ?? null;
+        $message = $envelope['msg'] ?? $envelope['message'] ?? $envelope['error_description'] ?? $envelope['error'] ?? null;
+        $message = is_string($message) ? $message : null;
 
-        return new SigenCloudException($response, is_string($message) ? $message : null, previous: $senderException);
+        if ($response->status() === 401 || in_array($code, [401, 403, '401', '403'], true)) {
+            return new SigenCloudAuthenticationException($response, $message, previous: $senderException);
+        }
+
+        if ($response->status() === 429 || in_array($code, [429, '429'], true)) {
+            return new SigenCloudRateLimitException($response, $message, previous: $senderException);
+        }
+
+        return new SigenCloudException($response, $message, previous: $senderException);
     }
 
     /**

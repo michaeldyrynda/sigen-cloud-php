@@ -66,7 +66,10 @@ When the cached access token has expired or is within a minute of expiring, `acc
 
 ### Errors
 
-The API often reports failures with HTTP 200 and a non-zero `code`. The connector treats those as failures, so every failed request throws `Dyrynda\SigenCloud\Exceptions\SigenCloudException`, a Saloon `RequestException`, with Sigen's message.
+The API often reports failures with HTTP 200 and a non-zero `code`. The connector treats those as failures, so every failed request throws `Dyrynda\SigenCloud\Exceptions\SigenCloudException`, a Saloon `RequestException`, with Sigen's message. Two subclasses let you react to specific failures:
+
+- `SigenCloudAuthenticationException` when Sigen rejects the credentials or token (HTTP 401, or code 401 or 403)
+- `SigenCloudRateLimitException` when Sigen rate limits the request (HTTP 429 or code 429)
 
 `setPowerLimit()` throws an `InvalidArgumentException` for negative limits, and `startManualControl()` for durations outside 30 to 120 minutes, without sending a request.
 

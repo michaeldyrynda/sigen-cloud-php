@@ -6,4 +6,4 @@ namespace Dyrynda\SigenCloud\Exceptions;
 
 use Saloon\Exceptions\Request\RequestException;
 
-final class SigenCloudException extends RequestException {}
+class SigenCloudException extends RequestException {}
