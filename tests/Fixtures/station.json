@@ -17,6 +17,7 @@
         "hasMeter": false,
         "hasThirdInverter": false,
         "status": 1,
+        "shutdownReason": null,
         "onGrid": true,
         "statusDesc": "Normal",
         "stationOpenTime": "2025-12-06",
