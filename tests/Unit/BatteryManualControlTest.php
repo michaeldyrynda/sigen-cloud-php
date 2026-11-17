@@ -1,25 +1,14 @@
 <?php
 
-use Dyrynda\SigenCloud\Data\AccessToken;
 use Dyrynda\SigenCloud\Enums\ManualControlMode;
-use Dyrynda\SigenCloud\Enums\Region;
 use Dyrynda\SigenCloud\Requests\GetManualControlDisplayRequest;
 use Dyrynda\SigenCloud\Requests\GetManualControlRequest;
 use Dyrynda\SigenCloud\Requests\UpdateManualControlRequest;
-use Dyrynda\SigenCloud\SigenCloud;
 use Saloon\Enums\Method;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
-
-function authenticatedSigen(): SigenCloud
-{
-    return new SigenCloud('owner@example.com', 'secret', Region::Australia, new AccessToken(
-        accessToken: 'cached-token',
-        expiresAt: new DateTimeImmutable('+1 hour'),
-    ));
-}
 
 function manualControlBodySent(MockClient $mockClient): ?array
 {
