@@ -4,8 +4,12 @@ use Dyrynda\SigenCloud\Data\AccessToken;
 use Dyrynda\SigenCloud\Enums\Region;
 use Dyrynda\SigenCloud\Requests\AccessTokenRequest;
 use Dyrynda\SigenCloud\Requests\GetStationRequest;
+use Dyrynda\SigenCloud\Requests\RefreshAccessTokenRequest;
 use Dyrynda\SigenCloud\SigenCloud;
 use Saloon\Http\Faking\MockClient;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
+use Saloon\Http\Response;
 
 function sentWithBearer(MockClient $mockClient, string $requestClass, string $token): bool
 {
@@ -29,6 +33,7 @@ it('exposes the access token from login so it can be cached', function () {
 
     expect($token)
         ->accessToken->toBe('access-token-from-login')
+        ->refreshToken->toBe('refresh-token-from-login')
         ->expiresAt->toBeGreaterThanOrEqual($before)
         ->expiresAt->toBeLessThanOrEqual($after);
 });
@@ -69,3 +74,52 @@ it('logs in again when the cached access token has expired or is about to', func
     'expired a minute ago' => '-1 minute',
     'expires in 30 seconds' => '+30 seconds',
 ]);
+
+it('refreshes an expired access token with its refresh token instead of the password', function () {
+    $mockClient = MockClient::global([
+        RefreshAccessTokenRequest::class => MockResponse::make(['code' => 0, 'msg' => 'success', 'data' => [
+            'access_token' => 'access-token-from-refresh',
+            'refresh_token' => 'rotated-refresh-token',
+            'expires_in' => 43199,
+        ]]),
+        GetStationRequest::class => fixtureResponse('station'),
+    ]);
+
+    $sigen = new SigenCloud('owner@example.com', 'secret', Region::Australia, new AccessToken(
+        accessToken: 'expired-token',
+        expiresAt: new DateTimeImmutable('-1 minute'),
+        refreshToken: 'cached-refresh-token',
+    ));
+
+    $sigen->stations()->current();
+
+    $mockClient->assertNotSent(AccessTokenRequest::class);
+    $mockClient->assertSent(fn (Request $request, Response $response) => $request instanceof RefreshAccessTokenRequest
+        && $response->getPendingRequest()->getUrl() === 'https://api-aus.sigencloud.com/auth/oauth/token'
+        && $response->getPendingRequest()->headers()->get('Authorization') === 'Basic '.base64_encode('sigen:sigen')
+        && $response->getPendingRequest()->body()?->all() === [
+            'grant_type' => 'refresh_token',
+            'refresh_token' => 'cached-refresh-token',
+        ]);
+    expect(sentWithBearer($mockClient, GetStationRequest::class, 'access-token-from-refresh'))->toBeTrue()
+        ->and($sigen->accessToken()->refreshToken)->toBe('rotated-refresh-token');
+});
+
+it('logs in with the password when Sigen rejects the refresh token', function () {
+    $mockClient = MockClient::global([
+        RefreshAccessTokenRequest::class => MockResponse::make(['code' => 401, 'msg' => 'Invalid refresh token'], 401),
+        AccessTokenRequest::class => fixtureResponse('token'),
+        GetStationRequest::class => fixtureResponse('station'),
+    ]);
+
+    $sigen = new SigenCloud('owner@example.com', 'secret', Region::Australia, new AccessToken(
+        accessToken: 'expired-token',
+        expiresAt: new DateTimeImmutable('-1 minute'),
+        refreshToken: 'revoked-refresh-token',
+    ));
+
+    $sigen->stations()->current();
+
+    $mockClient->assertSent(RefreshAccessTokenRequest::class);
+    expect(sentWithBearer($mockClient, GetStationRequest::class, 'access-token-from-login'))->toBeTrue();
+});

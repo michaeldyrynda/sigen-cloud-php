@@ -52,11 +52,10 @@ The connector logs in on its first request. Access tokens last about 12 hours. T
 ```php
 $sigen = new SigenCloud($username, $password, Region::Australia, $cache->get('sigen:access_token'));
 
-$token = $sigen->accessToken();
-$cache->put('sigen:access_token', $token, $token->expiresAt);
+$cache->forever('sigen:access_token', $sigen->accessToken());
 ```
 
-`accessToken()` logs in again when the cached token has expired or is within a minute of expiring.
+When the cached access token has expired or is within a minute of expiring, `accessToken()` exchanges its refresh token for a new one. If Sigen rejects the refresh token, it logs in with the password instead. Cache the token beyond `expiresAt` so the refresh token is still there when the access token runs out.
 
 ### Errors
 

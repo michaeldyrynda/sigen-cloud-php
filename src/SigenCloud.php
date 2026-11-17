@@ -8,6 +8,7 @@ use Dyrynda\SigenCloud\Data\AccessToken;
 use Dyrynda\SigenCloud\Enums\Region;
 use Dyrynda\SigenCloud\Exceptions\SigenCloudException;
 use Dyrynda\SigenCloud\Requests\AccessTokenRequest;
+use Dyrynda\SigenCloud\Requests\RefreshAccessTokenRequest;
 use Dyrynda\SigenCloud\Resources\BatteryResource;
 use Dyrynda\SigenCloud\Resources\SolarResource;
 use Dyrynda\SigenCloud\Resources\StationResource;
@@ -38,13 +39,22 @@ final class SigenCloud extends Connector
 
     public function accessToken(): AccessToken
     {
-        if ($this->accessToken === null || $this->accessToken->hasExpired()) {
-            $this->accessToken = AccessToken::fromResponse(
-                $this->send(new AccessTokenRequest($this->username, $this->password))
-            );
+        if ($this->accessToken !== null && ! $this->accessToken->hasExpired()) {
+            return $this->accessToken;
         }
 
-        return $this->accessToken;
+        if ($this->accessToken?->refreshToken !== null) {
+            try {
+                return $this->accessToken = AccessToken::fromResponse(
+                    $this->send(new RefreshAccessTokenRequest($this->accessToken->refreshToken))
+                );
+            } catch (SigenCloudException) {
+            }
+        }
+
+        return $this->accessToken = AccessToken::fromResponse(
+            $this->send(new AccessTokenRequest($this->username, $this->password))
+        );
     }
 
     public function battery(): BatteryResource
