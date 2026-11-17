@@ -141,3 +141,19 @@ it('does not retry with a password when the refresh request is rate limited', fu
 
     $mockClient->assertNotSent(AccessTokenRequest::class);
 });
+
+it('logs in again when the refresh grant is rejected as invalid', function () {
+    $mockClient = MockClient::global([
+        RefreshAccessTokenRequest::class => MockResponse::make(['error' => 'invalid_grant'], 400),
+        AccessTokenRequest::class => fixtureResponse('token'),
+    ]);
+
+    $sigen = new SigenCloud('owner@example.com', 'secret', Region::Australia, new AccessToken(
+        accessToken: 'expired-token',
+        expiresAt: new DateTimeImmutable('-1 minute'),
+        refreshToken: 'revoked-token',
+    ));
+
+    expect($sigen->accessToken()->accessToken)->toBe('access-token-from-login');
+    $mockClient->assertSent(AccessTokenRequest::class);
+});

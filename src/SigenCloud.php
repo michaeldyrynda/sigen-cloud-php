@@ -71,7 +71,7 @@ final class SigenCloud extends Connector
         $message = $envelope['msg'] ?? $envelope['message'] ?? $envelope['error_description'] ?? $envelope['error'] ?? null;
         $message = is_string($message) ? $message : null;
 
-        if ($response->status() === 401 || in_array($code, [401, 403, '401', '403'], true)) {
+        if ($response->status() === 401 || in_array($code, [401, 403, '401', '403'], true) || ($envelope['error'] ?? null) === 'invalid_grant') {
             return new SigenCloudAuthenticationException($response, $message, previous: $senderException);
         }
 
