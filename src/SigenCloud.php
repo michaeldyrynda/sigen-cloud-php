@@ -50,7 +50,7 @@ final class SigenCloud extends Connector
                 return $this->accessToken = AccessToken::fromResponse(
                     $this->send(new RefreshAccessTokenRequest($this->accessToken->refreshToken))
                 );
-            } catch (SigenCloudException) {
+            } catch (SigenCloudAuthenticationException) {
             }
         }
 

@@ -123,3 +123,21 @@ it('logs in with the password when Sigen rejects the refresh token', function ()
     $mockClient->assertSent(RefreshAccessTokenRequest::class);
     expect(sentWithBearer($mockClient, GetStationRequest::class, 'access-token-from-login'))->toBeTrue();
 });
+
+it('does not retry with a password when the refresh request is rate limited', function () {
+    $mockClient = MockClient::global([
+        RefreshAccessTokenRequest::class => MockResponse::make(['msg' => 'Too many requests'], 429),
+        AccessTokenRequest::class => fixtureResponse('token'),
+    ]);
+
+    $sigen = new SigenCloud('owner@example.com', 'secret', Region::Australia, new AccessToken(
+        accessToken: 'expired-token',
+        expiresAt: new DateTimeImmutable('-1 minute'),
+        refreshToken: 'refresh-token',
+    ));
+
+    expect(fn () => $sigen->accessToken())
+        ->toThrow(Dyrynda\SigenCloud\Exceptions\SigenCloudRateLimitException::class);
+
+    $mockClient->assertNotSent(AccessTokenRequest::class);
+});
