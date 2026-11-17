@@ -8,6 +8,7 @@ use Dyrynda\SigenCloud\Data\AccessToken;
 use Dyrynda\SigenCloud\Enums\Region;
 use Dyrynda\SigenCloud\Exceptions\SigenCloudException;
 use Dyrynda\SigenCloud\Requests\AccessTokenRequest;
+use Dyrynda\SigenCloud\Resources\BatteryResource;
 use Dyrynda\SigenCloud\Resources\SolarResource;
 use Dyrynda\SigenCloud\Resources\StationResource;
 use Saloon\Http\Auth\TokenAuthenticator;
@@ -22,6 +23,11 @@ final class SigenCloud extends Connector
 {
     use AcceptsJson;
     use AlwaysThrowOnErrors;
+
+    /**
+     * The value Sigenergy uses to mean "no limit" (0xFFFFFFFF watts).
+     */
+    public const float UNLIMITED_KILOWATTS = 4294967.295;
 
     public function __construct(
         #[SensitiveParameter] private readonly string $username,
@@ -39,6 +45,11 @@ final class SigenCloud extends Connector
         }
 
         return $this->accessToken;
+    }
+
+    public function battery(): BatteryResource
+    {
+        return new BatteryResource($this);
     }
 
     public function getRequestException(Response $response, ?Throwable $senderException): SigenCloudException

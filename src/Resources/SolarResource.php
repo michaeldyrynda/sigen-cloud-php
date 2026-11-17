@@ -6,16 +6,12 @@ namespace Dyrynda\SigenCloud\Resources;
 
 use Dyrynda\SigenCloud\Requests\GetSolarPowerLimitRequest;
 use Dyrynda\SigenCloud\Requests\UpdateSolarPowerLimitRequest;
+use Dyrynda\SigenCloud\SigenCloud;
 use InvalidArgumentException;
 use Saloon\Http\BaseResource;
 
 final class SolarResource extends BaseResource
 {
-    /**
-     * The value Sigenergy uses to mean "no limit" (0xFFFFFFFF watts).
-     */
-    private const float UNLIMITED_KILOWATTS = 4294967.295;
-
     /**
      * The PV power limit in kilowatts, or null when PV output is not limited.
      */
@@ -28,12 +24,12 @@ final class SolarResource extends BaseResource
 
         $kilowatts = (float) $powerLimit;
 
-        return $kilowatts >= self::UNLIMITED_KILOWATTS ? null : $kilowatts;
+        return $kilowatts >= SigenCloud::UNLIMITED_KILOWATTS ? null : $kilowatts;
     }
 
     public function removePowerLimit(int $stationId): void
     {
-        $this->setPowerLimit($stationId, self::UNLIMITED_KILOWATTS);
+        $this->setPowerLimit($stationId, SigenCloud::UNLIMITED_KILOWATTS);
     }
 
     public function setPowerLimit(int $stationId, float $kilowatts): void
