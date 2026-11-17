@@ -52,6 +52,27 @@ $sigen->battery()->manualControlDisplay($station->id); // ['batteryPower' => 12.
 
 The override ends by itself when its duration runs out. Stop it explicitly when you no longer want it, rather than waiting for it to expire.
 
+### Other resources
+
+Each operation takes the station ID explicitly. DC charger and V2X operations also take a charger serial number.
+
+```php
+$stationId = $station->id;
+
+$sigen->stations()->energyFlow($stationId);
+$sigen->stations()->topology($stationId);
+$sigen->battery()->levels($stationId);
+$sigen->battery()->peakShavingSchedule($stationId);
+$sigen->grid()->exportLimit($stationId);
+$sigen->operatingModes()->current($stationId);
+$sigen->tariffs()->priceCost($stationId);
+
+$sigen->dcCharger()->status($stationId, $chargerSerial);
+$sigen->v2x()->dischargeInfo($stationId, $chargerSerial);
+```
+
+Changing the operating mode can take a plant out of VPP scheduling. AIO power operations can shut down the plant; do not use them without understanding the consequences. Not all write endpoints have been verified against physical equipment.
+
 ### Access tokens
 
 The connector logs in on its first request. Access tokens last about 12 hours. To avoid logging in on every run, cache the token and pass it back in:
@@ -78,9 +99,9 @@ The API often reports failures with HTTP 200 and a non-zero `code`. The connecto
 | Path | Purpose |
 | --- | --- |
 | `src/SigenCloud.php` | The connector: base URL, authentication, token handling and error detection |
-| `src/Resources/` | Grouped operations: `stations()`, `solar()` and `battery()` |
+| `src/Resources/` | Grouped station, solar, battery, grid, operating mode, tariff, charger, V2X and AIO operations |
 | `src/Requests/` | One Saloon request per endpoint |
-| `src/Data/` | Response DTOs: `Station` and `AccessToken` |
+| `src/Data/` | Response DTOs and settings, including station topology and battery schedules |
 | `src/Enums/` | `Region` base URLs and battery `ManualControlMode`s |
 | `src/Support/PasswordEncrypter.php` | Encrypts the password the way the mySigen app does before login |
 
