@@ -24,6 +24,7 @@ final class UpdateManualControlRequest extends Request implements HasBody
         private readonly int $stationId,
         private readonly ?ManualControlMode $mode = null,
         private readonly ?int $minutes = null,
+        private readonly ?float $powerLimitationKilowatts = null,
     ) {}
 
     public function resolveEndpoint(): string
@@ -51,9 +52,9 @@ final class UpdateManualControlRequest extends Request implements HasBody
             'stationId' => $this->stationId,
             'mode' => $this->mode->value,
             'duration' => (string) $this->minutes,
-            'powerLimitation' => $this->mode->hasPowerLimit()
-                ? number_format(SigenCloud::UNLIMITED_KILOWATTS, 3, '.', '')
-                : '',
+            'powerLimitation' => $this->powerLimitationKilowatts !== null
+                ? number_format($this->powerLimitationKilowatts, 3, '.', '')
+                : ($this->mode->hasPowerLimit() ? number_format(SigenCloud::UNLIMITED_KILOWATTS, 3, '.', '') : ''),
         ];
     }
 }

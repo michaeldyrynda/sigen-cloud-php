@@ -46,6 +46,16 @@ it('charges the battery at full power for the given minutes', function () {
     ]);
 });
 
+it('sends an explicit manual control power limit in kilowatts', function () {
+    $mockClient = MockClient::global([
+        UpdateManualControlRequest::class => MockResponse::make(['code' => 0, 'msg' => 'success', 'data' => true]),
+    ]);
+
+    authenticatedSigen()->battery()->startManualControl(120250610002197, ManualControlMode::Discharging, 45, powerLimitationKilowatts: 2.75);
+
+    expect(manualControlBodySent($mockClient)['powerLimitation'])->toBe('2.750');
+});
+
 it('holds the battery without a power limitation', function () {
     $mockClient = MockClient::global([
         UpdateManualControlRequest::class => MockResponse::make(['code' => 0, 'msg' => 'success', 'data' => true]),
