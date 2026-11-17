@@ -41,6 +41,13 @@ use Dyrynda\SigenCloud\Enums\ManualControlMode;
 $sigen->battery()->startManualControl($station->id, ManualControlMode::Charging, minutes: 30);
 $sigen->battery()->startManualControl($station->id, ManualControlMode::HoldBattery, minutes: 30);
 $sigen->battery()->stopManualControl($station->id); // hand back to the active strategy
+
+$control = $sigen->battery()->manualControl($station->id);
+$control->enabled; // false while the battery follows its strategy
+$control->mode;    // ManualControlMode, or null when off
+$control->endsAt;  // DateTimeImmutable, or null when off
+
+$sigen->battery()->manualControlDisplay($station->id); // ['batteryPower' => 12.2, 'batterySoc' => 90.5]
 ```
 
 The override ends by itself when its duration runs out. Stop it explicitly when you no longer want it, rather than waiting for it to expire.

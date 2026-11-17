@@ -3,6 +3,8 @@
 use Dyrynda\SigenCloud\Data\AccessToken;
 use Dyrynda\SigenCloud\Enums\ManualControlMode;
 use Dyrynda\SigenCloud\Enums\Region;
+use Dyrynda\SigenCloud\Requests\GetManualControlDisplayRequest;
+use Dyrynda\SigenCloud\Requests\GetManualControlRequest;
 use Dyrynda\SigenCloud\Requests\UpdateManualControlRequest;
 use Dyrynda\SigenCloud\SigenCloud;
 use Saloon\Enums\Method;
@@ -99,4 +101,51 @@ it('hands the battery back to the active strategy', function () {
         'duration' => '',
         'powerLimitation' => '',
     ]);
+});
+
+it('reads the active manual control mode and when it ends', function () {
+    MockClient::global([
+        GetManualControlRequest::class => MockResponse::make(['code' => 0, 'msg' => 'success', 'data' => [
+            'enable' => true,
+            'mode' => '1',
+            'endTime' => '1776471497',
+        ]]),
+    ]);
+
+    $control = authenticatedSigen()->battery()->manualControl(120250610002197);
+
+    expect($control)
+        ->enabled->toBeTrue()
+        ->mode->toBe(ManualControlMode::Discharging)
+        ->endsAt->format(DATE_ATOM)->toBe('2026-04-18T00:18:17+00:00');
+});
+
+it('reads manual control as off with no mode or end when the battery follows its strategy', function (array $control) {
+    MockClient::global([
+        GetManualControlRequest::class => MockResponse::make(['code' => 0, 'msg' => 'success', 'data' => $control]),
+    ]);
+
+    expect(authenticatedSigen()->battery()->manualControl(120250610002197))
+        ->enabled->toBeFalse()
+        ->mode->toBeNull()
+        ->endsAt->toBeNull();
+})->with([
+    'zeroed, as an Australian station reports it' => [['enable' => false, 'mode' => '0', 'endTime' => '0']],
+    'blank' => [['enable' => false, 'mode' => '', 'endTime' => '']],
+]);
+
+it('reads the battery power and charge shown on the manual control screen', function () {
+    $mockClient = MockClient::global([
+        GetManualControlDisplayRequest::class => MockResponse::make(['code' => 0, 'msg' => 'success', 'data' => [
+            'batteryPower' => 6.7,
+            'batterySoc' => 11.1,
+        ]]),
+    ]);
+
+    expect(authenticatedSigen()->battery()->manualControlDisplay(120250610002197))->toBe([
+        'batteryPower' => 6.7,
+        'batterySoc' => 11.1,
+    ]);
+    $mockClient->assertSent(fn (Request $request, Response $response) => $response->getPendingRequest()->getUrl()
+        === 'https://api-aus.sigencloud.com/device/energy-profile/instant/manunal/display/120250610002197');
 });
