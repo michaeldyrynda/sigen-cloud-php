@@ -1,0 +1,41 @@
+{
+    "name": "dyrynda/sigen-cloud-php",
+    "description": "A PHP SDK for interacting with the Sigenergy (mySigen) cloud API",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "ext-openssl": "*",
+        "saloonphp/saloon": "^4.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.32",
+        "pestphp/pest": "^4.1",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dyrynda\\SigenCloud\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Michael Dyrynda",
+            "email": "michael@dyrynda.com.au"
+        }
+    ],
+    "minimum-stability": "stable",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "lint": [
+            "vendor/bin/pint --test",
+            "vendor/bin/phpstan analyse"
+        ]
+    }
+}
